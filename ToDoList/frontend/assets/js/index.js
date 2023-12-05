@@ -48,7 +48,7 @@ document.getElementById("signupForm").addEventListener("submit", function (event
         if (data.success) {
             // Cadastro bem-sucedido, redirecione para a página de login ou faça o que for necessário
             alert("Cadastro bem-sucedido! Faça login para continuar.");
-            const url = window.location.origin + "/Projeto/ToDoList/frontend/login.html";
+            const url = window.location.origin + "/Projeto/ToDoList/frontend/index.html";
             window.location.href = url;
         } else {
             // Exiba uma mensagem de erro informando o motivo do fracasso do cadastro

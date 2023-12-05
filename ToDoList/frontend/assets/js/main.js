@@ -61,7 +61,7 @@ function get_user_tasks(id_usuario, status = "Todas"){
         if(tarefas.length === 0){
             console.log("vazio!");
             document.querySelector("#no_tasks").classList.remove("d-none");//caso exista tarefas remove
-            document.querySelector("#total_tasks").classList.add("d-none");
+            //
         }else{
 
             document.querySelector("#tasks_container").innerHTML = null;
@@ -118,13 +118,33 @@ function get_user_tasks(id_usuario, status = "Todas"){
         }
     })
 
-    .then(total=>{//uso do COUNT total de tarefas
-    //console.log(total[0].total_geral);
-    document.querySelector("#total_tasks > div > p > span").textContent = total[0].total_geral; //buscar no html pelo id e navegar dentro do texto, add o tamanho
-    })
+    .then(total => {//CODIFICAÇÃO PARA EXIBIR O TOTAL GERAL, E DE CADA STATUS
 
+        if (status === "Todas" && total.length>0) {   
+            document.querySelector("#total_tasks > div > p > span").textContent = total.find(item => item.status === null).total_geral;
+            document.querySelector(`#total_novas > div > p > span`).textContent = getTotalByStatus(total, 'Nova');
+            document.querySelector(`#total_pendentes > div > p > span`).textContent = getTotalByStatus(total, 'Pendente');
+            document.querySelector(`#total_canceladas > div > p > span`).textContent = getTotalByStatus(total, 'Cancelada');
+            document.querySelector(`#total_concluidas > div > p > span`).textContent = getTotalByStatus(total, 'Concluida');
+            document.querySelector("#total_novas").classList.remove("d-none");
+            document.querySelector("#total_pendentes").classList.remove("d-none");
+            document.querySelector("#total_canceladas").classList.remove("d-none");
+            document.querySelector("#total_concluidas").classList.remove("d-none");
+        } 
+        if (status != "Todas" && total.length>0){
+            document.querySelector("#total_tasks > div > p > span").textContent = total[0].total_geral;
+            document.querySelector("#total_novas").classList.add("d-none");
+            document.querySelector("#total_pendentes").classList.add("d-none");
+            document.querySelector("#total_canceladas").classList.add("d-none");
+            document.querySelector("#total_concluidas").classList.add("d-none");
+        }
+    })
 }
 
+function getTotalByStatus(total, status) {
+    const statusItem = total.find(item => item.status === status);
+    return statusItem ? statusItem.total_geral : 0;//Se encontrar o objeto, retorna total_geral de tal status; caso contrário, retorna 0
+}
 //------------------------------------------------------------------------------------------
 function edit_task(id_tarefa){
     const url = window.location.origin + "/Projeto/ToDoList/frontend/editar_tarefa.html?id_tarefa=" + id_tarefa;
@@ -162,6 +182,7 @@ function change_task_status(id_tarefa){
     const url = window.location.origin + "/Projeto/ToDoList/frontend/main.html";
     window.location.href = url;
 }
+
 //------------------------------------------------------------------------------------------
 document.querySelector("#btn_nova_tarefa").addEventListener('click', ()=>{
 
@@ -183,4 +204,50 @@ document.querySelector("#btn_sair").addEventListener('click', () => {
     // Redireciona para a tela de login (index.html)
     const url = window.location.origin + "/Projeto/ToDoList/frontend/index.html";
     window.location.href = url;
+});
+
+
+//------------------------------------------------------------------------------------------evento para pegar a tarefa mais recente
+function getOldestAndLatestTasks(id_usuario, isMostRecent) {
+    fetch(`http://localhost:3000/user/tasks/antiga_recente/${id_usuario}`)
+        .then(response => {
+            if (response.status === 200) {
+                return response.json();
+            } else {
+                console.log('Erro ao obter informações sobre tarefas.');
+            }
+        })
+        .then(data => {
+            if (data && (data.nome_tarefa_recente || data.tarefa_mais_recente || data.nome_tarefa_antiga || data.tarefa_mais_antiga)) {
+                // Formatar as datas
+                const formatDate = (dateString) => {
+                    const options = { year: 'numeric', month: 'long', day: 'numeric' };
+                    return new Date(dateString).toLocaleDateString('pt-BR', options);
+                };
+
+                // Exibir as informações formatadas em um alerta
+                let message = '';
+                if (isMostRecent) {
+                    message = `Nome da tarefa mais recente: ${data.nome_tarefa_recente || 'N/A'}\nCriada em: ${formatDate(data.tarefa_mais_recente || 'N/A')}`;
+                } else {
+                    message = `Nome da tarefa mais antiga: ${data.nome_tarefa_antiga || 'N/A'}\nCriada em: ${formatDate(data.tarefa_mais_antiga || 'N/A')}`;
+                }
+
+                alert(message);
+            } else {
+                alert('Não foram encontradas tarefas.');
+            }
+        })
+        .catch(error => {
+            console.error('Erro na requisição:', error);
+        });
+}
+
+// Adicione isso onde você achar apropriado, como um botão ou seleção
+document.querySelector("#btn_tarefa_mais_antiga").addEventListener('click', () => {
+    getOldestAndLatestTasks(id_user, false);
+});
+
+document.querySelector("#btn_tarefa_mais_recente").addEventListener('click', () => {
+    getOldestAndLatestTasks(id_user, true);
 });
